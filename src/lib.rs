@@ -4,19 +4,21 @@
 //! un enum que el llamador puede `match` sin asignar. El binario (`src/main.rs`)
 //! no vive aquí: usa `anyhow` para contexto de aplicación.
 //!
-//! Fase 1: solo tipos de dominio ([`Key`], [`Value`], [`SeqNum`]) y errores.
+//! Fase 2: tipos de dominio, errores y MemTable lock-free ([`MemTable`]).
 
 #![deny(missing_docs)]
 
 pub mod error;
+pub mod memtable;
 pub mod types;
 
 pub use error::Error;
+pub use memtable::{Lookup, MemTable, MemValue};
 pub use types::{Key, SeqNum, Value};
 
 #[cfg(test)]
 mod tests {
-    use super::{Error, Key, SeqNum, Value};
+    use super::{Error, Key, Lookup, MemTable, SeqNum, Value};
 
     #[test]
     fn public_api_reexports_compile() {
@@ -27,5 +29,8 @@ mod tests {
         assert_eq!(value.as_bytes(), b"v");
         assert_eq!(seq.get(), 0);
         let _err: Error = Error::EmptyKey;
+        let table = MemTable::new(64);
+        assert!(table.get(b"k").is_missing());
+        let _lookup: Lookup<'_> = Lookup::Missing;
     }
 }
