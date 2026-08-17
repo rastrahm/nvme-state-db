@@ -16,4 +16,5 @@ path = "src/main.rs"
 
 [dependencies]
 anyhow = "1"
+crossbeam-skiplist = "0.1"
 thiserror = "2"

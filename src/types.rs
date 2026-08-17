@@ -118,8 +118,8 @@ impl From<Key> for Vec<u8> {
 
 /// Valor de estado: secuencia de bytes, posiblemente vacía.
 ///
-/// Un valor vacío **no** es un borrado. El borrado se modelará como tombstone
-/// en la MemTable (fase 2): son tipos distintos a propósito.
+/// Un valor vacío **no** es un borrado. El borrado es un tombstone en
+/// [`crate::memtable::MemTable::delete`]: son tipos distintos a propósito.
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub struct Value(Vec<u8>);
 

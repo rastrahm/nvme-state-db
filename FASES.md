@@ -3,7 +3,7 @@
 Motor KV de baja latencia en Rust para estado blockchain en NVMe.
 Cada fase debe ser **autorizada** antes de implementarse. El objetivo es completar la fase y entender cómo funciona.
 
-Estado actual del repositorio: **Fase 1 completa**. Existen crate, tipos (`Key`, `Value`, `SeqNum`) y `Error`.
+Estado actual del repositorio: **Fase 2 completa**. Crate, tipos, errores y MemTable lock-free.
 
 ---
 
@@ -73,13 +73,15 @@ nvme-state-db/
 
 ## Fase 2 — MemTable lock-free
 
-**Estado:** pendiente de autorización
+**Estado:** completa (`cargo test` + `cargo clippy -D warnings`)
 
 **Qué se construye:** `src/memtable.rs` con `crossbeam-skiplist`: `put`, `get`, `delete` (tombstone), iteración ordenada, estimación de tamaño para flush.
 
 **Qué se aprende:** por qué una SkipList permite lecturas concurrentes sin mutex; qué es un tombstone; cuándo la MemTable está llena.
 
 **Criterio de cierre:** tests de put/get/delete, overwrite, concurrencia básica y tamaño.
+
+**Hecho:** `src/memtable.rs`, dependencia `crossbeam-skiplist`. `put`/`get`/`delete`, tombstones, iteración ordenada, `approx_bytes` / `is_full`.
 
 ---
 

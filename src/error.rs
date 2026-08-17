@@ -9,7 +9,6 @@ use thiserror::Error;
 /// Error recuperable de la biblioteca.
 ///
 /// Las variantes se irán ampliando en fases posteriores (WAL, SSTable, motor).
-/// En esta fase cubren los invariantes de los newtypes y el puente hacia I/O.
 #[derive(Debug, Error)]
 pub enum Error {
     /// Fallo del sistema de archivos o del kernel.
