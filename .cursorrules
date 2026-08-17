@@ -1,0 +1,54 @@
+# .cursorrules — nvme-state-db
+
+## PROJECT OVERVIEW
+`nvme-state-db` is a high-performance, low-latency key-value storage engine in Rust optimized for blockchain state access on NVMe drives. It bypasses the Linux page cache using `O_DIRECT` Write-Ahead Logging (WAL), uses a concurrent lock-free MemTable, and implements zero-copy SSTable reads via `mmap` with SIMD-accelerated Bloom filters.
+
+---
+
+## 1. TECHNICAL STACK & CONSTRAINTS
+
+- **Language & Standard:** Rust (2021 edition or newer).
+- **Core Dependencies:**
+  - `libc` / `nix` (`O_DIRECT`, `O_SYNC`, 4K aligned memory allocations)
+  - `memmap2` (zero-copy SSTable mapping)
+  - `zerocopy` / `rkyv` (zero-copy memory deserialization)
+  - `crossbeam-skiplist` (lock-free concurrent MemTable)
+  - `thiserror` (strict, zero-cost error types)
+  - `criterion` (benchmarks)
+- **Target OS:** Linux x86_64 (Kernel 6.8+, Direct NVMe I/O).
+- **Forbidden Patterns:**
+  - Standard unaligned `File::write` for WAL operations (must enforce 4096-byte memory/sector alignment).
+  - No `unwrap()` or `expect()` in production modules.
+  - No copying or dynamic re-allocation of state records on read paths.
+
+---
+
+## 2. RUST CODING CONVENTIONS & ARCHITECTURE
+
+- **Memory Layout:** On-disk headers (`WALHeader`, `BlockHeader`, `IndexEntry`) must use `#[repr(C)]` or `#[repr(packed)]` for byte-exact alignment.
+- **Direct I/O Enforcement:** All WAL writes must use heap buffers aligned to 4096 bytes via `posix_memalign` / `aligned-vec` to satisfy `O_DIRECT` kernel constraints.
+- **Concurrency:** Lock-free SkipList for active MemTable reads/writes; background workers for flushing MemTable to SSTables without blocking the execution engine.
+- **Inlining:** Annotate hot-path lookup methods, Bloom filter evaluations, and hash functions with `#[inline(always)]`.
+
+---
+
+## 3. PROJECT DIRECTORY STRUCTURE
+
+```text
+nvme-state-db/
+├── Cargo.toml
+├── .cursorrules
+├── src/
+│   ├── lib.rs
+│   ├── main.rs
+│   ├── memtable.rs         # Concurrent, lock-free SkipList MemTable
+│   ├── wal.rs              # O_DIRECT Write-Ahead Log with 4K alignment
+│   ├── sstable/
+│   │   ├── mod.rs
+│   │   ├── writer.rs       # Flush pipeline: MemTable -> SSTable
+│   │   └── reader.rs       # Zero-copy reader backed by mmap
+│   └── index/
+│       ├── mod.rs
+│       └── bloom.rs        # SIMD-accelerated Bloom Filter
+└── benches/
+    └── state_access.rs     # IOPS, write amplification, and latency benchmarks

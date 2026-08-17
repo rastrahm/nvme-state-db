@@ -1,0 +1,22 @@
+# Rust Rules
+## General Principles
+- **Ownership & Borrowing**: Always prefer idiomatic ownership patterns. Avoid unnecessary `.clone()` or `unsafe` blocks.
+- **Error Handling**: Use `Result` and `Option` properly. Use `thiserror` for library errors and `anyhow` for application logic.
+- **TDD**: Write tests in the same file (mod tests) or `tests/` folder before implementation.
+
+## Standards
+- Follow `clippy` suggestions. 
+- Use `Cargo.toml` efficiently (workspace, features).
+- Documentation: Use `///` for public functions and `//` for internal logic.
+
+# Rust Rule Set
+- **Safety First**: No `unsafe` code unless strictly justified. Favor `Option` and `Result` over `.unwrap()`.
+- **Idiomatic Rust**: Follow `clippy` and `rustfmt`. Use `match` and `if let` for pattern matching.
+- **TDD**: Tests must exist in `tests/` or as a `mod tests` block. Run `cargo test` before suggesting completion.
+- **Architecture**: Use the "Newtype" pattern for domain-specific types. Keep crates modular.
+- **Explicit Development**: Avoid magic macros or complex type inference that hides logic. Be explicit with types and error handling.
+- **Function Documentation**: Every function must include a doc comment (///) specifying:
+  - **Purpose**: What the function does.
+  - **Inputs**: Explanation of each parameter.
+  - **Returns**: What it yields and potential Error cases.
+- **Ownership & TDD**: Favor idiomatic ownership. Tests must exist before implementation.
