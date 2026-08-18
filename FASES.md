@@ -3,7 +3,7 @@
 Motor KV de baja latencia en Rust para estado blockchain en NVMe.
 Cada fase debe ser **autorizada** antes de implementarse. El objetivo es completar la fase y entender cómo funciona.
 
-Estado actual del repositorio: **Fase 3 completa**. Crate, tipos, MemTable lock-free y WAL `O_DIRECT`.
+Estado actual del repositorio: **Fase 4 completa**. Crate, tipos, MemTable, WAL `O_DIRECT` y Bloom SIMD.
 
 ---
 
@@ -103,13 +103,15 @@ nvme-state-db/
 
 ## Fase 4 — Bloom filter SIMD
 
-**Estado:** pendiente de autorización
+**Estado:** completa (`cargo test` + `cargo clippy -D warnings`)
 
 **Qué se construye:** `src/index/mod.rs` y `src/index/bloom.rs`: insert, `may_contain`, serialización a disco.
 
 **Qué se aprende:** un Bloom **nunca** da falso negativo; sí puede dar falso positivo (y por eso ahorra I/O en SSTables). Qué gana SIMD.
 
 **Criterio de cierre:** tests de pertenencia, falsos negativos = 0, y (de)serializar el filtro.
+
+**Hecho:** `src/index/mod.rs`, `src/index/bloom.rs`. Bloom por bloques de 256 bits, `may_contain` con AVX2, `to_bytes` / `from_bytes`.
 
 ---
 

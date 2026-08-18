@@ -51,6 +51,14 @@ pub enum Error {
         /// Tope actual del motor.
         max: usize,
     },
+
+    /// Capacidad o `bits_per_key` fuera de rango al construir el filtro.
+    #[error("parámetros de Bloom inválidos: {0}")]
+    BloomInvalid(&'static str),
+
+    /// Magic, tamaños o `k` ilegibles al deserializar un Bloom.
+    #[error("Bloom corrupto: {0}")]
+    BloomCorrupt(&'static str),
 }
 
 #[cfg(test)]
@@ -94,6 +102,18 @@ mod tests {
         assert_eq!(
             Error::WalCorrupt("magic inválida").to_string(),
             "WAL corrupto: magic inválida"
+        );
+    }
+
+    #[test]
+    fn bloom_error_display() {
+        assert_eq!(
+            Error::BloomInvalid("bits_per_key").to_string(),
+            "parámetros de Bloom inválidos: bits_per_key"
+        );
+        assert_eq!(
+            Error::BloomCorrupt("magic").to_string(),
+            "Bloom corrupto: magic"
         );
     }
 }
