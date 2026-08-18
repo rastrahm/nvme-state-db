@@ -3,7 +3,7 @@
 Motor KV de baja latencia en Rust para estado blockchain en NVMe.
 Cada fase debe ser **autorizada** antes de implementarse. El objetivo es completar la fase y entender cómo funciona.
 
-Estado actual del repositorio: **Fase 2 completa**. Crate, tipos, errores y MemTable lock-free.
+Estado actual del repositorio: **Fase 3 completa**. Crate, tipos, MemTable lock-free y WAL `O_DIRECT`.
 
 ---
 
@@ -87,13 +87,15 @@ nvme-state-db/
 
 ## Fase 3 — WAL con `O_DIRECT` y alineación 4K
 
-**Estado:** pendiente de autorización
+**Estado:** completa (`cargo test` + `cargo clippy -D warnings`)
 
 **Qué se construye:** `src/wal.rs`: header `#[repr(C)]`, buffers alineados (`posix_memalign` / `aligned-vec`), append de records, replay para recovery.
 
 **Qué se aprende:** por qué `File::write` normal rompe `O_DIRECT`; qué es un sector de 4096; por qué el WAL se escribe **antes** de la MemTable; cómo se reconstruye el estado tras un crash.
 
 **Criterio de cierre:** tests de append + replay; un test que compruebe que el buffer está alineado a 4096. `unsafe` solo aquí, documentado.
+
+**Hecho:** `src/wal.rs` (`WALHeader` 4K, `posix_memalign`, append/replay, CRC). Replay aplica a MemTable en tests de recovery.
 
 **Nota:** en desarrollo se puede usar un directorio normal; NVMe real no es obligatorio para aprender.
 

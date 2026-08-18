@@ -80,7 +80,10 @@ fn describe(label: &str, got: Lookup<'_>) {
             } else {
                 String::from_utf8_lossy(bytes).into_owned()
             };
-            println!("  {label} → Alive  valor={shown:?}  seq={}", pinned.seq().get());
+            println!(
+                "  {label} → Alive  valor={shown:?}  seq={}",
+                pinned.seq().get()
+            );
         }
         Lookup::Deleted(seq) => {
             println!("  {label} → Deleted (tombstone)  seq={}", seq.get());

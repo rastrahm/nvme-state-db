@@ -8,7 +8,7 @@ use thiserror::Error;
 
 /// Error recuperable de la biblioteca.
 ///
-/// Las variantes se irán ampliando en fases posteriores (WAL, SSTable, motor).
+/// Las variantes se irán ampliando en fases posteriores (SSTable, motor).
 #[derive(Debug, Error)]
 pub enum Error {
     /// Fallo del sistema de archivos o del kernel.
@@ -23,6 +23,34 @@ pub enum Error {
     /// El contador monotónico del WAL/MemTable alcanzó `u64::MAX`.
     #[error("desbordamiento del número de secuencia")]
     SequenceOverflow,
+
+    /// El puntero del buffer no cumple la alineación que exige `O_DIRECT`.
+    #[error("buffer WAL no alineado a {required} bytes")]
+    Unaligned {
+        /// Alineación exigida, en bytes (4096).
+        required: usize,
+    },
+
+    /// `posix_memalign` devolvió un código distinto de 0.
+    #[error("posix_memalign falló con código {0}")]
+    AllocFailed(i32),
+
+    /// Magic, checksum de cabecera o payload con CRC válido pero ilegible.
+    #[error("WAL corrupto: {0}")]
+    WalCorrupt(&'static str),
+
+    /// El archivo declara una versión de formato que este binario no entiende.
+    #[error("versión de WAL no soportada: {0}")]
+    UnsupportedWalVersion(u16),
+
+    /// El registro no cabe en el límite defensivo (evita mapear gigabytes).
+    #[error("registro WAL demasiado grande ({size} bytes, máximo {max})")]
+    WalRecordTooLarge {
+        /// Tamaño que se intentó escribir o leer.
+        size: usize,
+        /// Tope actual del motor.
+        max: usize,
+    },
 }
 
 #[cfg(test)]
@@ -59,5 +87,13 @@ mod tests {
     fn error_is_send_sync_static() {
         fn assert_bounds<T: Send + Sync + 'static>() {}
         assert_bounds::<Error>();
+    }
+
+    #[test]
+    fn wal_corrupt_display() {
+        assert_eq!(
+            Error::WalCorrupt("magic inválida").to_string(),
+            "WAL corrupto: magic inválida"
+        );
     }
 }
