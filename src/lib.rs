@@ -4,7 +4,7 @@
 //! un enum que el llamador puede `match` sin asignar. El binario (`src/main.rs`)
 //! no vive aquí: usa `anyhow` para contexto de aplicación.
 //!
-//! Fase 8: motor con flush en background (MemTable activa + inmutable).
+//! Fase 9: motor completo y benches de latencia / IOPS / write amplification.
 
 #![deny(missing_docs)]
 
