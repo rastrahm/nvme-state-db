@@ -19,6 +19,7 @@ anyhow = "1"
 crc32fast = "1"
 crossbeam-skiplist = "0.1"
 libc = "0.2"
+memmap2 = "0.9"
 thiserror = "2"
 
 [dev-dependencies]

@@ -4,7 +4,7 @@
 //! un enum que el llamador puede `match` sin asignar. El binario (`src/main.rs`)
 //! no vive aquí: usa `anyhow` para contexto de aplicación.
 //!
-//! Fase 5: tipos, MemTable, WAL, Bloom y writer de SSTable ([`flush_memtable`]).
+//! Fase 6: tipos, MemTable, WAL, Bloom, writer y reader mmap de SSTable.
 
 #![deny(missing_docs)]
 
@@ -18,7 +18,7 @@ pub mod wal;
 pub use error::Error;
 pub use index::Bloom;
 pub use memtable::{Lookup, MemTable, MemValue};
-pub use sstable::{flush_memtable, SstFooter, SstMeta, SstWriter};
+pub use sstable::{flush_memtable, SstFooter, SstLookup, SstMeta, SstReader, SstWriter};
 pub use types::{Key, SeqNum, Value};
 pub use wal::{Wal, WalOp, WalRecord, WAL_ALIGN};
 

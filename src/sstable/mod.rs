@@ -1,16 +1,18 @@
 //! SSTable: archivo inmutable, claves **ordenadas**, pensado para `mmap`.
 //!
-//! El writer (fase 5) vuelca una MemTable. El reader (fase 6) mapeará el mismo
-//! layout. Escribir ordenado permite búsqueda binaria por índice de bloques;
-//! escribir en bloques de ~4K limita cuánto hay que tocar en un `get`.
+//! El writer (fase 5) vuelca una MemTable. El reader (fase 6) mapea el mismo
+//! layout con `mmap` y busca sin copiar valores. Escribir ordenado permite
+//! búsqueda binaria por índice de bloques; bloques de ~4K limitan el `get`.
 //!
 //! **Write amplification (aquí):** cada flush copia todas las claves de RAM a
 //! un archivo nuevo. Más adelante la compactación volverá a copiar SSTables
 //! viejas a otras nuevas. No se actualiza un valor in-place.
 
+mod reader;
 mod writer;
 
-pub use writer::{flush_memtable, SstMeta, SstWriteOptions, SstWriter};
+pub use reader::{SstLookup, SstReader};
+pub use writer::{flush_memtable, flush_memtable_with, SstMeta, SstWriteOptions, SstWriter};
 
 use crate::error::Error;
 
@@ -403,7 +405,7 @@ fn read_u16(src: &[u8], off: usize) -> Result<u16, Error> {
     Ok(u16::from_le_bytes([slot[0], slot[1]]))
 }
 
-fn read_u32(src: &[u8], off: usize) -> Result<u32, Error> {
+pub(crate) fn read_u32(src: &[u8], off: usize) -> Result<u32, Error> {
     let slot = src
         .get(off..off + 4)
         .ok_or(Error::SstCorrupt("decode u32"))?;
@@ -412,7 +414,7 @@ fn read_u32(src: &[u8], off: usize) -> Result<u32, Error> {
     Ok(u32::from_le_bytes(raw))
 }
 
-fn read_u64(src: &[u8], off: usize) -> Result<u64, Error> {
+pub(crate) fn read_u64(src: &[u8], off: usize) -> Result<u64, Error> {
     let slot = src
         .get(off..off + 8)
         .ok_or(Error::SstCorrupt("decode u64"))?;
