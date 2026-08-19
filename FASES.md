@@ -3,7 +3,7 @@
 Motor KV de baja latencia en Rust para estado blockchain en NVMe.
 Cada fase debe ser **autorizada** antes de implementarse. El objetivo es completar la fase y entender cómo funciona.
 
-Estado actual del repositorio: **Fase 8 completa**. Flush en background (MemTable activa + inmutable + worker).
+Estado actual del repositorio: **Fase 9 completa**. Benches Criterion con línea base en esta fase.
 
 ---
 
@@ -173,13 +173,32 @@ nvme-state-db/
 
 ## Fase 9 — Benchmarks
 
-**Estado:** pendiente de autorización
+**Estado:** completa (`cargo test` + `cargo clippy -D warnings` + `cargo bench --bench state_access`)
 
 **Qué se construye:** `benches/state_access.rs` con Criterion: latencia de `get`/`put`, IOPS, write amplification.
 
 **Qué se aprende:** qué medir (p50/p99, no solo media) y qué números importan en NVMe.
 
 **Criterio de cierre:** benches corren y dejan una línea base documentada en el resumen de la fase.
+
+**Hecho:** `cargo bench --bench state_access`. Informes HTML en `target/criterion/`.
+
+### Línea base (esta máquina, 2026-08-19)
+
+Linux x86_64, WAL `O_DIRECT`+`O_SYNC`, clave 8 B + valor 32 B. La media de Criterion es el bucle caliente; p50/p99 salen de una pasada `Instant` (incluye más cola).
+
+| Métrica | Valor | Por qué importa |
+|---------|--------|-----------------|
+| `put` (Criterion) | ~5.3 ms, ~190 ops/s | Cada put espera disco (`O_SYNC` + página 4K). |
+| `put` p50 / p99 | ~5.2 ms / ~5.6 ms | Cola corta aquí; en carga real el p99 sube. |
+| `get` MemTable | ~55 ns, ~18 Mops/s | RAM + SkipList; no es el camino de consenso. |
+| `get` MemTable p50 / p99 | ~111 ns / ~438 ns | p99 ≈ 4× p50: la media (~55 ns) no cuenta la cola. |
+| `get` SSTable mmap | ~417 ns, ~2.4 Mops/s | Bloom + índice + bloque; más lento que RAM. |
+| `get` SST p50 / p99 | ~1.6 µs / ~2.8 µs | Primera pasada (512 keys) más fría que el bucle Criterion. |
+| Write amp. WAL | ×104 | 64 puts × 40 B usuario = 2560 B; WAL 266 KiB (64×4K). |
+| Write amp. post-flush | ×3.1 | SST compacta; se borra `wal.flush`. El WAL “gordo” era alineación, no el valor. |
+
+Comando: `cargo bench --bench state_access`.
 
 ---
 
