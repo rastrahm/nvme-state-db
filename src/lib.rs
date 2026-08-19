@@ -4,7 +4,7 @@
 //! un enum que el llamador puede `match` sin asignar. El binario (`src/main.rs`)
 //! no vive aquí: usa `anyhow` para contexto de aplicación.
 //!
-//! Fase 7: tipos, MemTable, WAL, Bloom, SSTable y motor [`Engine`] (`put`/`get`/flush).
+//! Fase 8: motor con flush en background (MemTable activa + inmutable).
 
 #![deny(missing_docs)]
 

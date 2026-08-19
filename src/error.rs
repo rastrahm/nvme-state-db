@@ -70,6 +70,14 @@ pub enum Error {
         /// Tamaño que se intentó escribir.
         size: usize,
     },
+
+    /// Mutex/RwLock envenenado (otro hilo paniqueó con el lock).
+    #[error("lock del motor envenenado")]
+    LockPoisoned,
+
+    /// El worker de flush falló (I/O, SST corrupta, etc.).
+    #[error("flush en background: {0}")]
+    Flush(String),
 }
 
 #[cfg(test)]
@@ -129,6 +137,15 @@ mod tests {
         assert_eq!(
             Error::SstCorrupt("footer").to_string(),
             "SSTable inválida: footer"
+        );
+    }
+
+    #[test]
+    fn engine_lock_and_flush_display() {
+        assert_eq!(Error::LockPoisoned.to_string(), "lock del motor envenenado");
+        assert_eq!(
+            Error::Flush("disco lleno".into()).to_string(),
+            "flush en background: disco lleno"
         );
     }
 }

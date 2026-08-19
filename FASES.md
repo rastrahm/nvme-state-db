@@ -3,7 +3,7 @@
 Motor KV de baja latencia en Rust para estado blockchain en NVMe.
 Cada fase debe ser **autorizada** antes de implementarse. El objetivo es completar la fase y entender cómo funciona.
 
-Estado actual del repositorio: **Fase 7 completa**. Crate, MemTable, WAL, Bloom, SSTable y motor síncrono (`put`/`get`/flush).
+Estado actual del repositorio: **Fase 8 completa**. Flush en background (MemTable activa + inmutable + worker).
 
 ---
 
@@ -159,13 +159,15 @@ nvme-state-db/
 
 ## Fase 8 — Flush en background
 
-**Estado:** pendiente de autorización
+**Estado:** completa (`cargo test` + `cargo clippy -D warnings`)
 
 **Qué se construye:** rotación de MemTable (activa ↔ inmutable) y worker que escribe SSTables **sin bloquear** `put`/`get`.
 
 **Qué se aprende:** por qué no se puede bloquear el motor de ejecución; el trade-off de una MemTable inmutable pendiente de flush.
 
 **Criterio de cierre:** writes continúan mientras hay un flush; `get` ve datos en la MemTable inmutable.
+
+**Hecho:** `schedule_flush` / worker / `wait_flush`. `get` = activa → inmutable → SST. WAL rotado a `wal.flush` hasta instalar el `.sst`.
 
 ---
 
