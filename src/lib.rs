@@ -4,10 +4,11 @@
 //! un enum que el llamador puede `match` sin asignar. El binario (`src/main.rs`)
 //! no vive aquí: usa `anyhow` para contexto de aplicación.
 //!
-//! Fase 6: tipos, MemTable, WAL, Bloom, writer y reader mmap de SSTable.
+//! Fase 7: tipos, MemTable, WAL, Bloom, SSTable y motor [`Engine`] (`put`/`get`/flush).
 
 #![deny(missing_docs)]
 
+pub mod engine;
 pub mod error;
 pub mod index;
 pub mod memtable;
@@ -15,6 +16,7 @@ pub mod sstable;
 pub mod types;
 pub mod wal;
 
+pub use engine::{Engine, EngineLookup, EngineOptions, EngineValue};
 pub use error::Error;
 pub use index::Bloom;
 pub use memtable::{Lookup, MemTable, MemValue};
