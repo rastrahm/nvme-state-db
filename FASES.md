@@ -3,7 +3,7 @@
 Motor KV de baja latencia en Rust para estado blockchain en NVMe.
 Cada fase debe ser **autorizada** antes de implementarse. El objetivo es completar la fase y entender cómo funciona.
 
-Estado actual del repositorio: **Fase 4 completa**. Crate, tipos, MemTable, WAL `O_DIRECT` y Bloom SIMD.
+Estado actual del repositorio: **Fase 6 completa**. Crate, MemTable, WAL, Bloom, writer y reader mmap de SSTable.
 
 ---
 
@@ -117,7 +117,7 @@ nvme-state-db/
 
 ## Fase 5 — SSTable writer (flush)
 
-**Estado:** pendiente de autorización
+**Estado:** completa (`cargo test` + `cargo clippy -D warnings`)
 
 **Qué se construye:** `src/sstable/mod.rs` y `writer.rs`: formato on-disk (bloques, `BlockHeader`, `IndexEntry`), flush de MemTable inmutable → archivo `.sst`.
 
@@ -125,17 +125,21 @@ nvme-state-db/
 
 **Criterio de cierre:** flush de una MemTable produce un archivo válido con índice y Bloom.
 
+**Hecho:** `src/sstable/mod.rs` (layout `BlockHeader` / `IndexEntry` / `SstFooter`) y `writer.rs` (`flush_memtable`).
+
 ---
 
 ## Fase 6 — SSTable reader zero-copy (`mmap`)
 
-**Estado:** pendiente de autorización
+**Estado:** completa (`cargo test` + `cargo clippy -D warnings`)
 
 **Qué se construye:** `src/sstable/reader.rs`: mapear el archivo, buscar por índice, devolver slices **sin copiar**.
 
 **Qué se aprende:** `mmap` vs leer a un `Vec`; por qué el lifetime del valor está atado al archivo mapeado; el camino caliente de lookup.
 
 **Criterio de cierre:** round-trip writer → reader; `get` encuentra claves y no encuentra las que no existen.
+
+**Hecho:** `SstReader` (`memmap2`) + `SstLookup` (`Alive` / `Deleted` / `Missing`). Bloom → índice binario → bloque; el valor es un subslice del mapping.
 
 ---
 

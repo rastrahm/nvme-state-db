@@ -8,7 +8,7 @@ use thiserror::Error;
 
 /// Error recuperable de la biblioteca.
 ///
-/// Las variantes se irán ampliando en fases posteriores (SSTable, motor).
+/// Las variantes se irán ampliando en fases posteriores (reader, motor).
 #[derive(Debug, Error)]
 pub enum Error {
     /// Fallo del sistema de archivos o del kernel.
@@ -59,6 +59,17 @@ pub enum Error {
     /// Magic, tamaños o `k` ilegibles al deserializar un Bloom.
     #[error("Bloom corrupto: {0}")]
     BloomCorrupt(&'static str),
+
+    /// Footer, bloque o índice de SSTable ilegible.
+    #[error("SSTable inválida: {0}")]
+    SstCorrupt(&'static str),
+
+    /// Un registro no cabe en `u32` para longitudes on-disk.
+    #[error("registro SST demasiado grande ({size} bytes)")]
+    SstRecordTooLarge {
+        /// Tamaño que se intentó escribir.
+        size: usize,
+    },
 }
 
 #[cfg(test)]
@@ -114,6 +125,10 @@ mod tests {
         assert_eq!(
             Error::BloomCorrupt("magic").to_string(),
             "Bloom corrupto: magic"
+        );
+        assert_eq!(
+            Error::SstCorrupt("footer").to_string(),
+            "SSTable inválida: footer"
         );
     }
 }

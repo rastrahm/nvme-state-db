@@ -4,19 +4,21 @@
 //! un enum que el llamador puede `match` sin asignar. El binario (`src/main.rs`)
 //! no vive aquí: usa `anyhow` para contexto de aplicación.
 //!
-//! Fase 4: tipos, MemTable, WAL `O_DIRECT` y Bloom SIMD ([`Bloom`](crate::index::Bloom)).
+//! Fase 6: tipos, MemTable, WAL, Bloom, writer y reader mmap de SSTable.
 
 #![deny(missing_docs)]
 
 pub mod error;
 pub mod index;
 pub mod memtable;
+pub mod sstable;
 pub mod types;
 pub mod wal;
 
 pub use error::Error;
 pub use index::Bloom;
 pub use memtable::{Lookup, MemTable, MemValue};
+pub use sstable::{flush_memtable, SstFooter, SstLookup, SstMeta, SstReader, SstWriter};
 pub use types::{Key, SeqNum, Value};
 pub use wal::{Wal, WalOp, WalRecord, WAL_ALIGN};
 
