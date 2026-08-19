@@ -116,6 +116,11 @@ struct AlignedBuf {
     cap: usize,
 }
 
+// SAFETY: dueño exclusivo del bloque de `posix_memalign`. Mover el WAL a
+// otro hilo (Mutex + worker de flush) no comparte el puntero. No implementamos
+// `Sync`: las escrituras usan `&mut self`.
+unsafe impl Send for AlignedBuf {}
+
 impl AlignedBuf {
     /// Purpose: reserva `bytes` (redondeados a páginas de 4K) alineados.
     ///
