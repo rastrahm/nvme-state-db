@@ -1,0 +1,141 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Depurar binario (nvme-state-db)",
+      "cargo": {
+        "args": ["build", "--bin=nvme-state-db", "--package=nvme-state-db"],
+        "filter": {
+          "name": "nvme-state-db",
+          "kind": "bin"
+        }
+      },
+      "args": ["${workspaceFolder}/target/debug-datadir"],
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "RUST_BACKTRACE": "1"
+      }
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Depurar tests de la librería",
+      "cargo": {
+        "args": [
+          "test",
+          "--no-run",
+          "--lib",
+          "--package=nvme-state-db"
+        ],
+        "filter": {
+          "name": "nvme_state_db",
+          "kind": "lib"
+        }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "RUST_BACKTRACE": "1"
+      }
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Depurar un test (filtro)",
+      "cargo": {
+        "args": [
+          "test",
+          "--no-run",
+          "--lib",
+          "--package=nvme-state-db"
+        ],
+        "filter": {
+          "name": "nvme_state_db",
+          "kind": "lib"
+        }
+      },
+      "args": ["${input:testFilter}", "--exact", "--nocapture"],
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "RUST_BACKTRACE": "1"
+      }
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Depurar example lookup",
+      "cargo": {
+        "args": ["build", "--example=lookup", "--package=nvme-state-db"],
+        "filter": {
+          "name": "lookup",
+          "kind": "example"
+        }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "RUST_BACKTRACE": "1"
+      }
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Depurar bench state_access (paso a paso)",
+      "cargo": {
+        "args": [
+          "build",
+          "--bench=state_access",
+          "--profile=dev",
+          "--package=nvme-state-db"
+        ],
+        "filter": {
+          "name": "state_access",
+          "kind": "bench"
+        }
+      },
+      "args": ["--test"],
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "RUST_BACKTRACE": "1"
+      }
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Depurar bench state_access (filtro Criterion)",
+      "cargo": {
+        "args": [
+          "build",
+          "--bench=state_access",
+          "--profile=dev",
+          "--package=nvme-state-db"
+        ],
+        "filter": {
+          "name": "state_access",
+          "kind": "bench"
+        }
+      },
+      "args": ["--test", "${input:benchFilter}"],
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "RUST_BACKTRACE": "1"
+      }
+    }
+  ],
+  "inputs": [
+    {
+      "id": "testFilter",
+      "type": "promptString",
+      "description": "Nombre del test (p. ej. put_then_get_from_memtable o engine::tests::crash_reopen_replays_wal)",
+      "default": "put_then_get_from_memtable"
+    },
+    {
+      "id": "benchFilter",
+      "type": "promptString",
+      "description": "Filtro Criterion (nombre del grupo/función: put, get_memtable, get_sstable, write_amplification)",
+      "default": "put"
+    }
+  ]
+}
