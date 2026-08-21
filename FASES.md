@@ -15,7 +15,7 @@ Estado actual del repositorio: **Fase 9 completa**. Benches Criterion con línea
 4. Resumir qué se construyó, qué se aprendió y qué queda.
 5. No adelantar fases.
 
-Reglas de código vigentes: `.cursorrules` (I/O directo, layout, concurrencia) y `rust.cursorrules` (ownership, `thiserror`, TDD, sin `unwrap` en producción).
+Reglas de código vigentes: `.cursorrules` (única fuente: I/O directo, layout, concurrencia, estilo Rust, TDD). En el stack de aprendizaje, este crate es el **único** dueño del disco; `solana-pipeline-unified` solo llama a `Engine`.
 
 ---
 

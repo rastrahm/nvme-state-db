@@ -1,7 +1,13 @@
 # .cursorrules — nvme-state-db
 
 ## PROJECT OVERVIEW
-`nvme-state-db` is a high-performance, low-latency key-value storage engine in Rust optimized for blockchain state access on NVMe drives. It bypasses the Linux page cache using `O_DIRECT` Write-Ahead Logging (WAL), uses a concurrent lock-free MemTable, and implements zero-copy SSTable reads via `mmap` with SIMD-accelerated Bloom filters.
+`nvme-state-db` is a high-performance, low-latency key-value storage engine in Rust optimized for blockchain **state** access on NVMe. It owns **all durable I/O** for this learning stack: `O_DIRECT` Write-Ahead Logging (WAL), concurrent MemTable, and SSTable reads via `mmap` with SIMD-accelerated Bloom filters.
+
+When used with `solana-pipeline-unified` / `mini-solana-turbine`, this crate is the **only** place that persists state. Callers use `Engine` (`put` / `get` / `delete` / `flush`); they must not reimplement WAL or SST writers.
+
+Work for *this* repo follows `FASES.md` (already largely complete). Changes that alter the public ingest contract should stay compatible with the orchestrator’s phases or be coordinated explicitly.
+
+**Precedence:** Project constraints here override generic Rust habits when they conflict.
 
 ---
 
@@ -9,26 +15,30 @@
 
 - **Language & Standard:** Rust (2021 edition or newer).
 - **Core Dependencies:**
-  - `libc` / `nix` (`O_DIRECT`, `O_SYNC`, 4K aligned memory allocations)
-  - `memmap2` (zero-copy SSTable mapping)
-  - `zerocopy` / `rkyv` (zero-copy memory deserialization)
-  - `crossbeam-skiplist` (lock-free concurrent MemTable)
-  - `thiserror` (strict, zero-cost error types)
-  - `criterion` (benchmarks)
+  - `libc` (`O_DIRECT`, `O_SYNC`, 4K aligned allocations via `posix_memalign`)
+  - `memmap2` (SSTable mapping)
+  - `crossbeam-skiplist` (concurrent MemTable)
+  - `thiserror` (library errors); `anyhow` only in the binary (`main.rs`)
+  - `crc32fast`, `criterion` (dev/benches as needed)
 - **Target OS:** Linux x86_64 (Kernel 6.8+, Direct NVMe I/O).
 - **Forbidden Patterns:**
-  - Standard unaligned `File::write` for WAL operations (must enforce 4096-byte memory/sector alignment).
-  - No `unwrap()` or `expect()` in production modules.
-  - No copying or dynamic re-allocation of state records on read paths.
+  - Unaligned `File::write` for WAL (enforce 4096-byte memory/sector alignment).
+  - No `unwrap()` / `expect()` in production modules (allowed in tests/benches).
+  - No copying or dynamic re-allocation of state records on **read** paths when returning views from mmap (the `Engine::get` API may copy at the engine boundary by design).
+- **`unsafe`:** only when required for alignment / FFI / mmap; each site needs `// SAFETY:`.
 
 ---
 
 ## 2. RUST CODING CONVENTIONS & ARCHITECTURE
 
-- **Memory Layout:** On-disk headers (`WALHeader`, `BlockHeader`, `IndexEntry`) must use `#[repr(C)]` or `#[repr(packed)]` for byte-exact alignment.
-- **Direct I/O Enforcement:** All WAL writes must use heap buffers aligned to 4096 bytes via `posix_memalign` / `aligned-vec` to satisfy `O_DIRECT` kernel constraints.
-- **Concurrency:** Lock-free SkipList for active MemTable reads/writes; background workers for flushing MemTable to SSTables without blocking the execution engine.
-- **Inlining:** Annotate hot-path lookup methods, Bloom filter evaluations, and hash functions with `#[inline(always)]`.
+- **Memory Layout:** On-disk headers (`WALHeader`, `BlockHeader`, `IndexEntry`) use `#[repr(C)]` with explicit padding. Avoid `#[repr(packed)]` unless justified (unaligned access hazards).
+- **Direct I/O:** WAL writes use 4096-byte-aligned buffers (`posix_memalign` / equivalent). Prefer pools created at init over allocating on every `put` when evolving the hot path.
+- **Concurrency:** SkipList MemTable for concurrent reads/writes; background worker for MemTable → SSTable flush without blocking callers longer than necessary.
+- **Inlining:** Hot-path lookup, Bloom, and hash helpers may use `#[inline(always)]` when useful.
+- **Public API focus:** `Engine` is the supported integration surface for external orchestrators.
+- **Style:** `clippy` + `rustfmt`; idiomatic ownership; Newtypes for `Key` / `Value` / `SeqNum`.
+- **Documentation (learning):** public items: `///` with purpose, inputs, returns/errors. Private helpers: concise `//`.
+- **TDD:** tests in `mod tests` or `tests/` before behavior changes; run `cargo test` before done.
 
 ---
 
@@ -37,18 +47,23 @@
 ```text
 nvme-state-db/
 ├── Cargo.toml
+├── FASES.md
 ├── .cursorrules
 ├── src/
 │   ├── lib.rs
 │   ├── main.rs
-│   ├── memtable.rs         # Concurrent, lock-free SkipList MemTable
-│   ├── wal.rs              # O_DIRECT Write-Ahead Log with 4K alignment
+│   ├── engine.rs
+│   ├── memtable.rs
+│   ├── wal.rs
+│   ├── types.rs
+│   ├── error.rs
 │   ├── sstable/
 │   │   ├── mod.rs
-│   │   ├── writer.rs       # Flush pipeline: MemTable -> SSTable
-│   │   └── reader.rs       # Zero-copy reader backed by mmap
+│   │   ├── writer.rs
+│   │   └── reader.rs
 │   └── index/
 │       ├── mod.rs
-│       └── bloom.rs        # SIMD-accelerated Bloom Filter
+│       └── bloom.rs
 └── benches/
-    └── state_access.rs     # IOPS, write amplification, and latency benchmarks
+    └── state_access.rs
+```
